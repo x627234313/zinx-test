@@ -33,24 +33,56 @@ func NewConnection(conn *net.TCPConn, connId uint32, callback ziface.HandleFunc)
 }
 
 func (c *Connection) StartReader() {
+	fmt.Println("Conn Reader Goroutine is running...")
+	// 上面语句会报错：panic: runtime error: invalid memory address or nil pointer dereference，可能是因为
+	// c 实例化还未成功。
+	//defer fmt.Printf("Conn[id=%d] Reader exit, remote addr is [%s]", c.ConnId, c.RemoteAddr.String())
+	defer fmt.Println(c.GetRemoteAddr().String(), " conn reader exit!")
+	defer c.Stop()
+
+	for {
+		buf := make([]byte, 512)
+		cnt, err := c.Conn.Read(buf)
+		if err != nil {
+			fmt.Printf("conn[id=%d] read error: %s", c.ConnId, err)
+			c.ExitChan <- true
+			continue
+		}
+
+		fmt.Printf("conn read: %s, cnt = %d\n", buf, cnt)
+
+		if err := c.handleAPI(c.Conn, buf, cnt); err != nil {
+			fmt.Printf("Conn[id=%d] handleAPI error[%s]", c.ConnId, err)
+			c.ExitChan <- true
+			return
+		}
+	}
 
 }
 
 func (c *Connection) Start() {
-	fmt.Printf("Reader Goroutine [id=%d] is running", c.ConnId)
-
 	go c.StartReader()
+
+	fmt.Printf("Conn[id=%d] is start.\n", c.ConnId)
+
+	for {
+		select {
+		case <-c.ExitChan:
+			return
+		}
+	}
 }
 
 func (c *Connection) Stop() {
 	if c.isClosed {
-		fmt.Println("Conn already closed.")
+		fmt.Println("Conn already stoped.")
 		return
 	}
 
 	c.isClosed = true
 	c.Conn.Close()
 
+	c.ExitChan <- true
 	close(c.ExitChan)
 
 	fmt.Printf("Conn[id=%d] is stoped", c.ConnId)

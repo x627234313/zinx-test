@@ -19,4 +19,4 @@ type IConnection interface {
 	Send([]byte) error
 }
 
-type HandleFunc func(uint32, []byte) error
+type HandleFunc func(*net.TCPConn, []byte, int) error
