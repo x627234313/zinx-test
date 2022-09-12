@@ -14,6 +14,9 @@ type Server struct {
 	Port      int
 	IPVersion string
 	Name      string
+
+	// 增加 Router 对象
+	Router ziface.IRouter
 }
 
 func CallBack(conn *net.TCPConn, data []byte, cnt int) error {
@@ -41,7 +44,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		fmt.Printf("[Zin Server] IP:%s Port:%d Start Sucess, Listenning...\n", s.IP, s.Port)
+		fmt.Printf("[Zin Server] IP:%s Port:%d Start Success, Listenning...\n", s.IP, s.Port)
 
 		var cid uint32
 		cid = 1
@@ -53,7 +56,7 @@ func (s *Server) Start() {
 				continue
 			}
 
-			dealConn := NewConnection(tcpconn, cid, CallBack)
+			dealConn := NewConnection(tcpconn, cid, s.Router)
 			cid++
 
 			go dealConn.Start()
@@ -73,11 +76,18 @@ func (s *Server) Serve() {
 	select {}
 }
 
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Router = router
+
+	fmt.Println("Add Router success.")
+}
+
 func NewServer(name string) ziface.IServer {
 	return &Server{
 		IP:        "0.0.0.0",
 		Port:      9999,
 		IPVersion: "tcp4",
 		Name:      name,
+		Router:    nil,
 	}
 }

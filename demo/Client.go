@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Client Test ...")
+	fmt.Println("Client Test ... Start")
 	time.Sleep(time.Second * 1)
 
 	conn, err := net.Dial("tcp", "0.0.0.0:9999")
@@ -17,7 +17,7 @@ func main() {
 	}
 
 	for {
-		_, err := conn.Write([]byte("Hello Zinx v0.2 !"))
+		_, err := conn.Write([]byte("Hello Zinx v0.3!"))
 		if err != nil {
 			fmt.Println("client write error: ", err)
 			return
@@ -30,7 +30,7 @@ func main() {
 			return
 		}
 
-		fmt.Printf("server call back: %s, cnt = %d\n", buf, cnt)
+		fmt.Printf("Server Call Back:\n%s, cnt = %d\n", buf, cnt)
 
 		time.Sleep(time.Second * 1)
 	}

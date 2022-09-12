@@ -19,16 +19,18 @@ type Connection struct {
 	ExitChan chan bool
 
 	// 连接处理业务的方法
-	handleAPI ziface.HandleFunc
+	//handleAPI ziface.HandleFunc
+	// 增加 Router 对象，不再使用 HandleFunc 对象
+	Router ziface.IRouter
 }
 
-func NewConnection(conn *net.TCPConn, connId uint32, callback ziface.HandleFunc) *Connection {
+func NewConnection(conn *net.TCPConn, connId uint32, router ziface.IRouter) *Connection {
 	return &Connection{
-		ConnId:    connId,
-		Conn:      conn,
-		isClosed:  false,
-		ExitChan:  make(chan bool, 1),
-		handleAPI: callback,
+		ConnId:   connId,
+		Conn:     conn,
+		isClosed: false,
+		ExitChan: make(chan bool, 1),
+		Router:   router,
 	}
 }
 
@@ -49,13 +51,17 @@ func (c *Connection) StartReader() {
 			continue
 		}
 
-		fmt.Printf("conn read: %s, cnt = %d\n", buf, cnt)
+		fmt.Printf("Conn read: %s, cnt = %d\n", buf, cnt)
 
-		if err := c.handleAPI(c.Conn, buf, cnt); err != nil {
-			fmt.Printf("Conn[id=%d] handleAPI error[%s]", c.ConnId, err)
-			c.ExitChan <- true
-			return
+		request := Request{
+			connection: c,
+			data:       buf,
 		}
+
+		go c.Router.PreHandle(&request)
+		go c.Router.Handle(&request)
+		go c.Router.PostHandle(&request)
+
 	}
 
 }
@@ -88,7 +94,7 @@ func (c *Connection) Stop() {
 	fmt.Printf("Conn[id=%d] is stoped", c.ConnId)
 }
 
-func (c *Connection) GetConn() *net.TCPConn {
+func (c *Connection) GetTCPConn() *net.TCPConn {
 	return c.Conn
 }
 
