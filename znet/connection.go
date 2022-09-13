@@ -58,9 +58,11 @@ func (c *Connection) StartReader() {
 			data:       buf,
 		}
 
-		go c.Router.PreHandle(&request)
-		go c.Router.Handle(&request)
-		go c.Router.PostHandle(&request)
+		go func(req ziface.IRequest) {
+			c.Router.PreHandle(req)
+			c.Router.Handle(req)
+			c.Router.PostHandle(req)
+		}(&request)
 
 	}
 
