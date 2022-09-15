@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/x627234313/zinx-test/utils"
 	"github.com/x627234313/zinx-test/ziface"
 )
 
@@ -43,7 +44,7 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		buf := make([]byte, 512)
+		buf := make([]byte, utils.GlobalObject.MaxPacketSize)
 		cnt, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Printf("conn[id=%d] read error: %s", c.ConnId, err)

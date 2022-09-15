@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/x627234313/zinx-test/utils"
 	"github.com/x627234313/zinx-test/ziface"
 )
 
@@ -31,6 +32,10 @@ func CallBack(conn *net.TCPConn, data []byte, cnt int) error {
 }
 
 func (s *Server) Start() {
+	fmt.Printf("[START] Server name=[%s], listenner ip=[%s], port=[%d] is starting.\n", s.Name, s.IP, s.Port)
+	fmt.Printf("[ZINX] Version=[%s], MaxConn=[%d], MaxPacketSize=[%d].\n", utils.GlobalObject.Version, utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPacketSize)
+
 	go func() {
 		tcpaddr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
@@ -44,10 +49,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		fmt.Printf("[Zin Server] IP:%s Port:%d Start Success, Listenning...\n", s.IP, s.Port)
-
 		var cid uint32
-		cid = 1
 
 		for {
 			tcpconn, err := tcplistener.AcceptTCP()
@@ -82,12 +84,14 @@ func (s *Server) AddRouter(router ziface.IRouter) {
 	fmt.Println("Add Router success.")
 }
 
-func NewServer(name string) ziface.IServer {
+func NewServer() ziface.IServer {
+	utils.GlobalObject.Reload()
+
 	return &Server{
-		IP:        "0.0.0.0",
-		Port:      9999,
+		IP:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		IPVersion: "tcp4",
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		Router:    nil,
 	}
 }
