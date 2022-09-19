@@ -11,29 +11,14 @@ type TestRouter struct {
 	znet.BaseRouter
 }
 
-func (tr *TestRouter) PreHandle(request ziface.IRequest) {
-	fmt.Println("Call TestRouter -> PreHandle :")
-	_, err := request.GetConnection().GetTCPConn().Write([]byte("before test...\n"))
-	if err != nil {
-		fmt.Println("Call TestRouter -> PreHandle Error")
-		return
-	}
-}
-
 func (tr *TestRouter) Handle(request ziface.IRequest) {
-	fmt.Println("Call TestRouter -> Handle :")
-	_, err := request.GetConnection().GetTCPConn().Write([]byte("test...\n"))
+	fmt.Println("Call TestRouter -> Handle")
+	fmt.Println("recv from client : msgId=", request.GetMsgId(), "data=", string(request.GetData()))
+
+	// 回写数据
+	err := request.GetConnection().SendMsg(1, []byte("test...test..."))
 	if err != nil {
 		fmt.Println("Call TestRouter -> Handle Error")
-		return
-	}
-}
-
-func (tr *TestRouter) PostHandle(request ziface.IRequest) {
-	fmt.Println(" Call TestRouter -> PostHandle :")
-	_, err := request.GetConnection().GetTCPConn().Write([]byte("after test...\n"))
-	if err != nil {
-		fmt.Println("Call TestRouter -> PostHandle Error")
 		return
 	}
 }

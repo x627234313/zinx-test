@@ -1,10 +1,11 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
 
-	"github.com/x627234313/zinx-test/utils"
 	"github.com/x627234313/zinx-test/ziface"
 )
 
@@ -44,19 +45,37 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		buf := make([]byte, utils.GlobalObject.MaxPacketSize)
-		cnt, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Printf("conn[id=%d] read error: %s", c.ConnId, err)
-			c.ExitChan <- true
-			continue
+
+		//初始化一个拆包 封包对象
+		dp := NewDataPack()
+
+		// 根据headLen 读取head
+		head := make([]byte, dp.GetHead())
+		if _, err := io.ReadFull(c.GetTCPConn(), head); err != nil {
+			fmt.Println("Read conn head error:", err)
+			break
 		}
 
-		fmt.Printf("Conn read: %s, cnt = %d\n", buf, cnt)
+		// 根据head 中datalen，读取data
+		msg, err := dp.Unpack(head)
+		if err != nil {
+			fmt.Println("Unpack head error:", err)
+			break
+		}
+
+		data := make([]byte, msg.GetMsgDataLen())
+		if _, err := io.ReadFull(c.GetTCPConn(), data); err != nil {
+			fmt.Println("Read conn data error:", err)
+			break
+		}
+
+		msg.SetMsgData(data)
+
+		fmt.Printf("Conn read msg id = %d, datalen = %d, data = %s\n", msg.GetMsgId(), msg.GetMsgDataLen(), string(msg.GetMsgData()))
 
 		request := Request{
 			connection: c,
-			data:       buf,
+			msg:        msg,
 		}
 
 		go func(req ziface.IRequest) {
@@ -109,6 +128,27 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-func (c *Connection) Send(data []byte) error {
+func (c *Connection) SendMsg(id uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("Conn is closed when sendmsg.")
+	}
+
+	// 初始化一个 封包对象
+	dp := NewDataPack()
+
+	// 对IMessage 进行封包
+	binaryMsg, err := dp.Pack(NewMessage(id, data))
+	if err != nil {
+		fmt.Println("Pack message error, message id = ", id)
+		return err
+	}
+
+	// 写回客户端
+	if _, err := c.Conn.Write(binaryMsg); err != nil {
+		fmt.Println("Write message id= ", id, "error")
+		c.ExitChan <- true
+		return err
+	}
+
 	return nil
 }
