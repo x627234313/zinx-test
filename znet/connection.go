@@ -20,19 +20,17 @@ type Connection struct {
 	// 连接关闭后向chan发送信息
 	ExitChan chan bool
 
-	// 连接处理业务的方法
-	//handleAPI ziface.HandleFunc
-	// 增加 Router 对象，不再使用 HandleFunc 对象
-	Router ziface.IRouter
+	// 该connection的消息管理模块，把msgId和对应的业务处理方法绑定
+	MsgHandle ziface.IMsgHandler
 }
 
-func NewConnection(conn *net.TCPConn, connId uint32, router ziface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, connId uint32, msgHandle ziface.IMsgHandler) *Connection {
 	return &Connection{
-		ConnId:   connId,
-		Conn:     conn,
-		isClosed: false,
-		ExitChan: make(chan bool, 1),
-		Router:   router,
+		ConnId:    connId,
+		Conn:      conn,
+		isClosed:  false,
+		ExitChan:  make(chan bool, 1),
+		MsgHandle: msgHandle,
 	}
 }
 
@@ -78,11 +76,7 @@ func (c *Connection) StartReader() {
 			msg:        msg,
 		}
 
-		go func(req ziface.IRequest) {
-			c.Router.PreHandle(req)
-			c.Router.Handle(req)
-			c.Router.PostHandle(req)
-		}(&request)
+		go c.MsgHandle.DoMsgHandle(&request)
 
 	}
 

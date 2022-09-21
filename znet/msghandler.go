@@ -12,6 +12,12 @@ type MsgHandle struct {
 	Apis map[uint32]ziface.IRouter
 }
 
+func NewMsgHandle() *MsgHandle {
+	return &MsgHandle{
+		Apis: make(map[uint32]ziface.IRouter),
+	}
+}
+
 func (mh *MsgHandle) DoMsgHandle(r ziface.IRequest) {
 	// 根据msgId获得对应的Handle
 	handle, ok := mh.Apis[r.GetMsgId()]
