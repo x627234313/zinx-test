@@ -22,7 +22,7 @@ func main() {
 	for {
 		// 封包， 发送Message
 		dp := znet.NewDataPack()
-		msg, _ := dp.Pack(znet.NewMessage(0, []byte("Zinx V0.5 Client Test Message")))
+		msg, _ := dp.Pack(znet.NewMessage(1, []byte("Zinx V0.6 Client-1 Test Message")))
 		_, err := conn.Write(msg)
 		if err != nil {
 			fmt.Println("client write error: ", err)
