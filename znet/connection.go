@@ -20,6 +20,9 @@ type Connection struct {
 	// 连接关闭后向chan发送信息
 	ExitChan chan bool
 
+	// 无缓冲channel， 用于 读、写 goroutine 传递数据
+	msgChan chan []byte
+
 	// 该connection的消息管理模块，把msgId和对应的业务处理方法绑定
 	MsgHandle ziface.IMsgHandler
 }
@@ -30,16 +33,17 @@ func NewConnection(conn *net.TCPConn, connId uint32, msgHandle ziface.IMsgHandle
 		Conn:      conn,
 		isClosed:  false,
 		ExitChan:  make(chan bool, 1),
+		msgChan:   make(chan []byte),
 		MsgHandle: msgHandle,
 	}
 }
 
 func (c *Connection) StartReader() {
-	fmt.Println("Conn Reader Goroutine is running...")
-	// 上面语句会报错：panic: runtime error: invalid memory address or nil pointer dereference，可能是因为
+	fmt.Println("[Conn Reader Goroutine is running]")
+	// 下面语句会报错：panic: runtime error: invalid memory address or nil pointer dereference，可能是因为
 	// c 实例化还未成功。
 	//defer fmt.Printf("Conn[id=%d] Reader exit, remote addr is [%s]", c.ConnId, c.RemoteAddr.String())
-	defer fmt.Println(c.GetRemoteAddr().String(), " conn reader exit!")
+	defer fmt.Println("[Conn Reader Goroutine exit.] ConnId = ", c.ConnId, " remote addr = ", c.GetRemoteAddr().String())
 	defer c.Stop()
 
 	for {
@@ -82,8 +86,31 @@ func (c *Connection) StartReader() {
 
 }
 
+func (c *Connection) StartWriter() {
+	fmt.Println("[Conn Writer Goroutine is running]")
+	defer fmt.Println("[Conn Writer Goroutine exit.] ConnId = ", c.ConnId, " remote addr = ", c.GetRemoteAddr().String())
+
+	// 从msgChan中读取数据
+	for {
+		select {
+		case data := <-c.msgChan:
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("Send Data error:, ", err, " Conn Writer exit")
+				return
+			}
+		case <-c.ExitChan:
+			return
+		}
+	}
+
+}
+
 func (c *Connection) Start() {
+	// 启动从当前连接的读数据的业务
 	go c.StartReader()
+
+	// 启动从当前连接写数据的业务
+	go c.StartWriter()
 
 	fmt.Printf("Conn[id=%d] is start.\n", c.ConnId)
 
@@ -102,12 +129,18 @@ func (c *Connection) Stop() {
 	}
 
 	c.isClosed = true
+
+	// 关闭socket连接
 	c.Conn.Close()
 
+	// 告知Writer 关闭
 	c.ExitChan <- true
-	close(c.ExitChan)
 
-	fmt.Printf("Conn[id=%d] is stoped", c.ConnId)
+	// 回收资源
+	close(c.ExitChan)
+	close(c.msgChan)
+
+	fmt.Printf("Conn[id=%d] is stoped.\n", c.ConnId)
 }
 
 func (c *Connection) GetTCPConn() *net.TCPConn {
@@ -124,7 +157,7 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 
 func (c *Connection) SendMsg(id uint32, data []byte) error {
 	if c.isClosed {
-		return errors.New("Conn is closed when sendmsg.")
+		return errors.New("Conn is closed when send msg.\n")
 	}
 
 	// 初始化一个 封包对象
@@ -137,12 +170,15 @@ func (c *Connection) SendMsg(id uint32, data []byte) error {
 		return err
 	}
 
+	//写回到msgChan中
+	c.msgChan <- binaryMsg
+
 	// 写回客户端
-	if _, err := c.Conn.Write(binaryMsg); err != nil {
+	/* if _, err := c.Conn.Write(binaryMsg); err != nil {
 		fmt.Println("Write message id= ", id, "error")
 		c.ExitChan <- true
 		return err
-	}
+	} */
 
 	return nil
 }
