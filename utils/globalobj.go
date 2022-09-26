@@ -15,6 +15,11 @@ type GlobalObj struct {
 	Version       string
 	MaxConn       int
 	MaxPacketSize int
+
+	// 设置工作池中worker数量
+	WorkerPoolSize uint32
+	// 设置工作池中worker的最大数量
+	MaxWorker uint32
 }
 
 var GlobalObject *GlobalObj
@@ -36,11 +41,13 @@ func (g *GlobalObj) Reload() {
 
 func init() {
 	GlobalObject = &GlobalObj{
-		Name:          "Zinx-Test Server",
-		Host:          "0.0.0.0",
-		TcpPort:       9999,
-		MaxConn:       10000,
-		MaxPacketSize: 4096,
+		Name:           "Zinx-Test Server",
+		Host:           "0.0.0.0",
+		TcpPort:        9999,
+		MaxConn:        10000,
+		MaxPacketSize:  4096,
+		WorkerPoolSize: 10,
+		MaxWorker:      1024,
 	}
 
 	GlobalObject.Reload()

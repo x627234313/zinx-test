@@ -4,17 +4,25 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/x627234313/zinx-test/utils"
 	"github.com/x627234313/zinx-test/ziface"
 )
 
 type MsgHandle struct {
 	// 存放每个msgID和对应的处理方法Handle
 	Apis map[uint32]ziface.IRouter
+
+	// 多任务工作池中worker数量
+	WorkerPoolSize uint32
+	// 多任务消息队列集合
+	TaskQueue []chan ziface.IRequest
 }
 
 func NewMsgHandle() *MsgHandle {
 	return &MsgHandle{
-		Apis: make(map[uint32]ziface.IRouter),
+		Apis:           make(map[uint32]ziface.IRouter),
+		WorkerPoolSize: utils.GlobalObject.WorkerPoolSize,
+		TaskQueue:      make([]chan ziface.IRequest, utils.GlobalObject.MaxWorker),
 	}
 }
 
