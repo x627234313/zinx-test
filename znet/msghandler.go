@@ -22,7 +22,7 @@ func NewMsgHandle() *MsgHandle {
 	return &MsgHandle{
 		Apis:           make(map[uint32]ziface.IRouter),
 		WorkerPoolSize: utils.GlobalObject.WorkerPoolSize,
-		TaskQueue:      make([]chan ziface.IRequest, utils.GlobalObject.MaxWorker),
+		TaskQueue:      make([]chan ziface.IRequest, utils.GlobalObject.WorkerPoolSize),
 	}
 }
 
@@ -49,4 +49,26 @@ func (mh *MsgHandle) AddRouter(msgid uint32, router ziface.IRouter) {
 	// 添加msgId对应的handle
 	mh.Apis[msgid] = router
 	fmt.Println("Add api msgId = ", msgid, " success.")
+}
+
+// 启动工作池
+func (mh *MsgHandle) StartWorkerPool() {
+	for i := 0; i < int(mh.WorkerPoolSize); i++ {
+		workerChan := make(chan ziface.IRequest, utils.GlobalObject.MaxWorkerChanReq)
+		mh.TaskQueue[i] = workerChan
+		go mh.startWorker(i)
+	}
+
+}
+
+// 启动一个worker
+func (mh *MsgHandle) startWorker(workeId int) {
+	fmt.Println("Worker ID = ", workeId, " is started...")
+
+	for {
+		select {
+		case req := <-mh.TaskQueue[workeId]:
+			mh.DoMsgHandle(req)
+		}
+	}
 }
