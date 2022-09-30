@@ -48,7 +48,7 @@ func (mh *MsgHandle) AddRouter(msgid uint32, router ziface.IRouter) {
 
 	// 添加msgId对应的handle
 	mh.Apis[msgid] = router
-	fmt.Println("Add api msgId = ", msgid, " success.")
+	fmt.Println("Add MsgId = ", msgid, "Api Success.")
 }
 
 // 启动工作池
@@ -71,4 +71,15 @@ func (mh *MsgHandle) startWorker(workeId int) {
 			mh.DoMsgHandle(req)
 		}
 	}
+}
+
+// 将客户端 request 发送到对应的TaskQueue中
+func (mh *MsgHandle) SendReqToTaskQueue(req ziface.IRequest) {
+
+	// 根据 connId ,轮询向taskQueue中发送req，实现简单负载均衡
+	id := req.GetConnection().GetConnId() % utils.GlobalObject.WorkerPoolSize
+
+	mh.TaskQueue[id] <- req
+
+	fmt.Printf("Add ConnId=[%d] request MsgId=[%d] to WorkerID=[%d].\n", req.GetConnection().GetConnId(), req.GetMsgId(), id)
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/x627234313/zinx-test/utils"
 	"github.com/x627234313/zinx-test/ziface"
 )
 
@@ -80,7 +81,11 @@ func (c *Connection) StartReader() {
 			msg:        msg,
 		}
 
-		go c.MsgHandle.DoMsgHandle(&request)
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			go c.MsgHandle.SendReqToTaskQueue(&request)
+		} else {
+			go c.MsgHandle.DoMsgHandle(&request)
+		}
 
 	}
 

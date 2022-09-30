@@ -2,5 +2,7 @@
     "Name":"Zinx-Test Server",
     "Host":"0.0.0.0",
     "TcpPort":9999,
-    "MaxConn":100
+    "MaxConn":100,
+    "WorkerPoolSize":10,
+    "Version":"Zinx 0.8"
   }

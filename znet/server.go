@@ -33,8 +33,8 @@ func CallBack(conn *net.TCPConn, data []byte, cnt int) error {
 
 func (s *Server) Start() {
 	fmt.Printf("[START] Server name=[%s], listenner ip=[%s], port=[%d] is starting.\n", s.Name, s.IP, s.Port)
-	fmt.Printf("[ZINX] Version=[%s], MaxConn=[%d], MaxPacketSize=[%d].\n", utils.GlobalObject.Version, utils.GlobalObject.MaxConn,
-		utils.GlobalObject.MaxPacketSize)
+	fmt.Printf("[ZINX] Version=[%s], MaxConn=[%d], MaxPacketSize=[%d], WorkerPooSize=[%d].\n", utils.GlobalObject.Version, utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPacketSize, utils.GlobalObject.WorkerPoolSize)
 
 	go func() {
 		tcpaddr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
@@ -48,6 +48,9 @@ func (s *Server) Start() {
 			fmt.Printf("Listen TCPAddr fail, err[%s], ip[%s], port[%d]", err, s.IP, s.Port)
 			return
 		}
+
+		// 启动工作池
+		s.MsgHandle.StartWorkerPool()
 
 		var cid uint32
 

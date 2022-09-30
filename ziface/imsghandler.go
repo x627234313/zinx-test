@@ -9,4 +9,6 @@ type IMsgHandler interface {
 
 	// 启动工作池
 	StartWorkerPool()
+	// 将req发送给TaskQueue，由worker处理
+	SendReqToTaskQueue(IRequest)
 }
