@@ -11,6 +11,8 @@ import (
 )
 
 type Connection struct {
+	//  当前 conn 隶属于的 server
+	TcpServer  ziface.IServer
 	ConnId     uint32
 	Conn       *net.TCPConn
 	RemoteAddr net.Addr
@@ -28,8 +30,9 @@ type Connection struct {
 	MsgHandle ziface.IMsgHandler
 }
 
-func NewConnection(conn *net.TCPConn, connId uint32, msgHandle ziface.IMsgHandler) *Connection {
-	return &Connection{
+func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, msgHandle ziface.IMsgHandler) *Connection {
+	c := &Connection{
+		TcpServer: server,
 		ConnId:    connId,
 		Conn:      conn,
 		isClosed:  false,
@@ -37,6 +40,11 @@ func NewConnection(conn *net.TCPConn, connId uint32, msgHandle ziface.IMsgHandle
 		msgChan:   make(chan []byte),
 		MsgHandle: msgHandle,
 	}
+
+	// 把当前 conn 添加到 ConnMgr 中
+	c.TcpServer.GetConnMgr().Add(c)
+
+	return c
 }
 
 func (c *Connection) StartReader() {
@@ -137,6 +145,9 @@ func (c *Connection) Stop() {
 
 	// 关闭socket连接
 	c.Conn.Close()
+
+	// 当前 conn 关闭时，从ConnMgr中移除
+	c.TcpServer.GetConnMgr().Remove(c)
 
 	// 告知Writer 关闭
 	c.ExitChan <- true
