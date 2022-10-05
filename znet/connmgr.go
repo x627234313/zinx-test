@@ -30,7 +30,7 @@ func (cm *ConnMgr) Add(conn ziface.IConnection) {
 	// 将 conn 添加到CommMgr中
 	cm.connections[conn.GetConnId()] = conn
 
-	fmt.Printf("ConnId = %d Add successfully.\n", conn.GetConnId())
+	fmt.Printf("ConnId = %d Add ConnMgr successfully. Current connection numbers = %d \n", conn.GetConnId(), cm.Count())
 }
 
 func (cm *ConnMgr) Remove(conn ziface.IConnection) error {
@@ -45,7 +45,7 @@ func (cm *ConnMgr) Remove(conn ziface.IConnection) error {
 		return errors.New("conn Not Found")
 	}
 
-	fmt.Printf("ConnId = %d Remove successfully.\n", conn.GetConnId())
+	fmt.Printf("ConnId = %d Remove ConnMgr successfully. Current connection numbers = %d \n", conn.GetConnId(), cm.Count())
 	return nil
 }
 

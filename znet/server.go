@@ -65,8 +65,8 @@ func (s *Server) Start() {
 			}
 
 			// 判断当前连接数是否超过最大连接数
-			if s.ConnMgr.Count() > utils.GlobalObject.MaxConn {
-				fmt.Printf("Too many connections")
+			if s.ConnMgr.Count() >= utils.GlobalObject.MaxConn {
+				fmt.Println("Too many connections")
 				tcpconn.Close()
 				continue
 			}
