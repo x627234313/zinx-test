@@ -40,12 +40,30 @@ func (tr *PingRouter) Handle(request ziface.IRequest) {
 }
 
 func DoConnectionBegin(conn ziface.IConnection) {
-	fmt.Println("==> Call OnConnStart function: DoConnectionBegin.")
+	fmt.Println("==> Call OnConnStart function: DoConnectionBegin(conn ziface.IConnection).")
 
+	// 添加一些连接属性
+	fmt.Println("Set Connection Properity --> [Name] [Home] [Github] ")
+	conn.SetProperty("name", "x627234313")
+	conn.SetProperty("home", "x627234313@163.com")
+	conn.SetProperty("github", "https://github.com/x627234313")
 }
 
 func DoConnectionClose(conn ziface.IConnection) {
-	fmt.Println("==> Call OnConnStop function: DoConnectionClose.")
+	fmt.Println("==> Call OnConnStop function: DoConnectionClose(conn ziface.IConnection).")
+
+	// 获取连接属性
+	if value, err := conn.GetProperty("name"); err == nil {
+		fmt.Println("Connection Properity --> [Name]=", value)
+	}
+
+	if value, err := conn.GetProperty("home"); err == nil {
+		fmt.Println("Connection Properity --> [Home]=", value)
+	}
+
+	if value, err := conn.GetProperty("github"); err == nil {
+		fmt.Println("Connection Properity --> [Github]=", value)
+	}
 }
 
 func main() {

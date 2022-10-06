@@ -17,6 +17,13 @@ type IConnection interface {
 
 	// 发送数据
 	SendMsg(id uint32, data []byte) error
+
+	// 设置连接属性
+	SetProperty(string, interface{})
+	// 获取连接属性
+	GetProperty(string) (interface{}, error)
+	// 移除连接属性
+	RemoveProperty(string)
 }
 
 type HandleFunc func(*net.TCPConn, []byte, int) error

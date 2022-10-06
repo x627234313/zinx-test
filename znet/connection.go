@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 
 	"github.com/x627234313/zinx-test/utils"
 	"github.com/x627234313/zinx-test/ziface"
@@ -28,6 +29,11 @@ type Connection struct {
 
 	// 该connection的消息管理模块，把msgId和对应的业务处理方法绑定
 	MsgHandle ziface.IMsgHandler
+
+	// 添加连接属性集合
+	properity map[string]interface{}
+	// 保护连接属性集合的锁
+	properityLock sync.RWMutex
 }
 
 func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, msgHandle ziface.IMsgHandler) *Connection {
@@ -39,6 +45,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, msgH
 		ExitChan:  make(chan bool, 1),
 		msgChan:   make(chan []byte),
 		MsgHandle: msgHandle,
+		properity: make(map[string]interface{}),
 	}
 
 	// 把当前 conn 添加到 ConnMgr 中
@@ -203,4 +210,37 @@ func (c *Connection) SendMsg(id uint32, data []byte) error {
 	} */
 
 	return nil
+}
+
+// 实现设置连接属性的方法
+func (c *Connection) SetProperty(key string, value interface{}) {
+	// 保护共享资源，加写锁
+	c.properityLock.Lock()
+	defer c.properityLock.Unlock()
+
+	c.properity[key] = value
+}
+
+// 实现获取连接属性的方法
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	// 保护共享资源，加读锁
+	c.properityLock.RLock()
+	defer c.properityLock.RUnlock()
+
+	if value, ok := c.properity[key]; ok {
+		return value, nil
+	} else {
+		return nil, errors.New("Conn Properity Not Found.")
+	}
+}
+
+// 实现移除连接属性的方法
+func (c *Connection) RemoveProperty(key string) {
+	// 保护共享资源，加写锁
+	c.properityLock.Lock()
+	defer c.properityLock.Unlock()
+
+	if _, ok := c.properity[key]; ok {
+		delete(c.properity, key)
+	}
 }
