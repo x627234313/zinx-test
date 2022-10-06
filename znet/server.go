@@ -21,6 +21,10 @@ type Server struct {
 
 	// 当前 server 的连接管理器
 	ConnMgr ziface.IConnMgr
+
+	// 给当前 server 提供两个Hook方法的属性，参数就是conn 无返回值，在连接创建后、销毁前调用
+	OnConnStart func(ziface.IConnection)
+	OnConnStop  func(ziface.IConnection)
 }
 
 func CallBack(conn *net.TCPConn, data []byte, cnt int) error {
@@ -102,6 +106,23 @@ func (s *Server) AddRouter(msgId uint32, router ziface.IRouter) {
 
 func (s *Server) GetConnMgr() ziface.IConnMgr {
 	return s.ConnMgr
+}
+
+// 实现注册、调用Hook函数的方法
+func (s *Server) SetOnConnStart(hookFunc func(ziface.IConnection)) {
+	s.OnConnStart = hookFunc
+}
+
+func (s *Server) SetOnConnStop(hookFunc func(ziface.IConnection)) {
+	s.OnConnStop = hookFunc
+}
+
+func (s *Server) CallOnConnStart(conn ziface.IConnection) {
+	s.OnConnStart(conn)
+}
+
+func (s *Server) CallOnConnStop(conn ziface.IConnection) {
+	s.OnConnStop(conn)
 }
 
 func NewServer() ziface.IServer {

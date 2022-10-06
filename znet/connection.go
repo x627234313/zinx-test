@@ -127,6 +127,9 @@ func (c *Connection) Start() {
 
 	fmt.Printf("Conn[id=%d] is start.\n", c.ConnId)
 
+	// 连接创建完成之后，调用注册的Hook函数
+	c.TcpServer.CallOnConnStart(c)
+
 	for {
 		select {
 		case <-c.ExitChan:
@@ -142,6 +145,9 @@ func (c *Connection) Stop() {
 	}
 
 	c.isClosed = true
+
+	// 连接关闭之前，调用注册的Hook函数
+	c.TcpServer.CallOnConnStop(c)
 
 	// 关闭socket连接
 	c.Conn.Close()

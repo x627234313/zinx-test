@@ -39,8 +39,20 @@ func (tr *PingRouter) Handle(request ziface.IRequest) {
 	}
 }
 
+func DoConnectionBegin(conn ziface.IConnection) {
+	fmt.Println("==> Call OnConnStart function: DoConnectionBegin.")
+
+}
+
+func DoConnectionClose(conn ziface.IConnection) {
+	fmt.Println("==> Call OnConnStop function: DoConnectionClose.")
+}
+
 func main() {
 	s := znet.NewServer()
+
+	s.SetOnConnStart(DoConnectionBegin)
+	s.SetOnConnStop(DoConnectionClose)
 
 	s.AddRouter(0, &TestRouter{})
 	s.AddRouter(1, &PingRouter{})
